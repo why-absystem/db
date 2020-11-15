@@ -67,6 +67,7 @@
 		}
 		
 		public function sql ($sql) {
+			$this->connect();
 			$query         = $this->myconn->query($sql);
 			$this->myQuery = $sql; // Pass back the SQL
 			if ($query) {
@@ -238,10 +239,13 @@
 		}
 		
 		//Pass the SQL back for debugging
-		public function getSql () {
+		public function getSql ($format = TRUE) {
 			$val           = $this->myQuery;
 			$this->myQuery = array();
-			return SqlFormatter::format($val);
+			if ($format)
+				return SqlFormatter::format($val);
+			else
+				return $val;
 		}
 		
 		//Pass the number of rows back
