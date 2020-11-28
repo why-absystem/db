@@ -30,12 +30,18 @@
 		private $myQuery    = "";// used for debugging process with SQL return
 		private $numResults = "";// used for returning the number of rows
 		
+		
 		/**
 		 * DB constructor.
 		 * @param string $path_env
 		 */
-		public function __construct ($path_env = __DIR__) {
-			$dotenv = Dotenv::createImmutable($path_env);
+		public function __construct ($path_env = "") {
+			$root_env = $path_env ? $path_env : $_SERVER['DOCUMENT_ROOT'];
+			if (!file_exists($root_env . '/.env')) {
+				echo "DB Class : $path_env/.env NOT FOUND.";
+				exit();
+			}
+			$dotenv = Dotenv::createImmutable($root_env);
 			$dotenv->load();
 			$this->db_host = getenv('DB_HOST');
 			$this->db_user = getenv('DB_USER');
