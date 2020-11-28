@@ -1,4 +1,8 @@
 <?php
+	/** @noinspection PhpInconsistentReturnPointsInspection */
+	/** @noinspection SqlResolve */
+	/** @noinspection SqlNoDataSourceInspection */
+	
 	/**
 	 * Programmer: WHY
 	 * Date: 10/11/20
@@ -7,6 +11,7 @@
 	
 	namespace W;
 	
+	use Dotenv\Dotenv;
 	use SqlFormatter;
 	
 	class DB {
@@ -25,15 +30,25 @@
 		private $myQuery    = "";// used for debugging process with SQL return
 		private $numResults = "";// used for returning the number of rows
 		
-		public function __construct ($db_host, $db_user, $db_pass, $db_name, $db_port = '3306') {
-			$this->db_host = $db_host;
-			$this->db_user = $db_user;
-			$this->db_pass = $db_pass;
-			$this->db_name = $db_name;
-			$this->db_port = $db_port;
+		/**
+		 * DB constructor.
+		 * @param string $path_env
+		 */
+		public function __construct ($path_env = __DIR__) {
+			$dotenv = Dotenv::createImmutable($path_env);
+			$dotenv->load();
+			$this->db_host = getenv('DB_HOST');
+			$this->db_user = getenv('DB_USER');
+			$this->db_pass = getenv('DB_PASS');
+			$this->db_name = getenv('DB_NAME');
+			$this->db_port = getenv('DB_PORT');
 		}
 		
-		// Function to make connection to database
+		
+		/**
+		 * @return bool
+		 * Function to make connection to database
+		 */
 		public function connect () {
 			if (!$this->con) {
 				$this->myconn = new \MySQLi($this->db_host, $this->db_user, $this->db_pass, $this->db_name, $this->db_port);
@@ -49,7 +64,11 @@
 			}
 		}
 		
-		// Function to disconnect from the database
+		
+		/**
+		 * @return bool
+		 * Function to disconnect from the database
+		 */
 		public function disconnect () {
 			// If there is a connection to the database
 			if ($this->con) {
@@ -66,6 +85,10 @@
 			}
 		}
 		
+		/**
+		 * @param $sql
+		 * @return bool
+		 */
 		public function sql ($sql) {
 			$this->connect();
 			$query         = $this->myconn->query($sql);
@@ -95,7 +118,17 @@
 			}
 		}
 		
-		// Function to SELECT from the database
+		
+		/**
+		 * @param $table
+		 * @param string $rows
+		 * @param null $join
+		 * @param null $where
+		 * @param null $order
+		 * @param null $limit
+		 * @return bool
+		 * Function to SELECT from the database
+		 */
 		public function select ($table, $rows = '*', $join = NULL, $where = NULL, $order = NULL, $limit = NULL) {
 			$this->connect();
 			// Create query from the variables passed to the function
@@ -115,7 +148,7 @@
 			// echo $table;
 			$this->myQuery = $q; // Pass back the SQL
 			// Check to see if the table exists
-			if ($this->tableExists($table)) {
+			if ($this->table_exists($table)) {
 				// The table exists, run the query
 				$query = $this->myconn->query($q);
 				if ($query) {
@@ -146,11 +179,17 @@
 			}
 		}
 		
-		// Function to insert into the database
+		
+		/**
+		 * @param $table
+		 * @param array $params
+		 * @return bool
+		 * Function to insert into the database
+		 */
 		public function insert ($table, $params = array()) {
 			$this->connect();
 			// Check to see if the table exists
-			if ($this->tableExists($table)) {
+			if ($this->table_exists($table)) {
 				$sql           = 'INSERT INTO `' . $table . '` (`' . implode('`, `', array_keys($params)) . '`) VALUES ("' . implode('", "', $params) . '")';
 				$this->myQuery = $sql; // Pass back the SQL
 				// Make the query to insert to the database
@@ -166,11 +205,16 @@
 			}
 		}
 		
-		//Function to delete table or row(s) from database
+		/**
+		 * @param $table
+		 * @param null $where
+		 * @return bool
+		 * Function to delete table or row(s) from database
+		 */
 		public function delete ($table, $where = NULL) {
 			$this->connect();
 			// Check to see if table exists
-			if ($this->tableExists($table)) {
+			if ($this->table_exists($table)) {
 				// The table exists check to see if we are deleting rows or table
 				if ($where == NULL) {
 					$delete = 'DROP TABLE ' . $table; // Create query to delete table
@@ -191,11 +235,18 @@
 			}
 		}
 		
-		// Function to update row in database
+		
+		/**
+		 * @param $table
+		 * @param array $params
+		 * @param $where
+		 * @return bool
+		 * Function to update row in database
+		 */
 		public function update ($table, $params = array(), $where) {
 			$this->connect();
 			// Check to see if table exists
-			if ($this->tableExists($table)) {
+			if ($this->table_exists($table)) {
 				// Create Array to hold all the columns to update
 				$args = array();
 				foreach ($params as $field => $value) {
@@ -218,8 +269,13 @@
 			}
 		}
 		
-		// Private function to check if table exists for use with queries
-		private function tableExists ($table) {
+		
+		/**
+		 * @param $table
+		 * @return bool
+		 * Private function to check if table exists for use with queries
+		 */
+		private function table_exists ($table) {
 			$tablesInDb = $this->myconn->query('SHOW TABLES FROM ' . $this->db_name . ' LIKE "' . $table . '"');
 			if ($tablesInDb) {
 				if ($tablesInDb->num_rows == 1) {
@@ -231,32 +287,74 @@
 			}
 		}
 		
-		// Public function to return the data to the user
-		public function getData () {
+		
+		/**
+		 * @param bool $show
+		 * @return array
+		 */
+		public function list_data ($show = FALSE) {
 			$val          = $this->result;
 			$this->result = array();
+			if ($show)
+				$this->show($val);
 			return $val;
 		}
 		
-		//Pass the SQL back for debugging
-		public function getSql ($format = TRUE) {
+		
+		/**
+		 * @param bool $show
+		 * @return array|mixed
+		 */
+		public function get_data ($show = FALSE) {
+			$val          = $this->result[0] ? $this->result[0] : [];
+			$this->result = array();
+			if ($show)
+				$this->show($val);
+			return $val;
+		}
+		
+		
+		/**
+		 * @param bool $format
+		 * @return string|void
+		 */
+		public function get_sql ($format = TRUE) {
 			$val           = $this->myQuery;
 			$this->myQuery = array();
 			if ($format)
-				return SqlFormatter::format($val);
+				return $this->show(SqlFormatter::format($val));
 			else
 				return $val;
 		}
 		
-		//Pass the number of rows back
-		public function numRows () {
+		
+		/**
+		 * @param bool $show
+		 * @return string
+		 */
+		public function num_rows ($show = FALSE) {
 			$val              = $this->numResults;
 			$this->numResults = array();
+			if ($show)
+				$this->show($this->result);
 			return $val;
 		}
 		
-		// Escape your string
-		public function escapeString ($data) {
+		
+		/**
+		 * @param $data
+		 * @return mixed
+		 */
+		public function escape_string ($data) {
 			return $this->myconn->real_escape_string($data);
+		}
+		
+		/**
+		 * @param $data
+		 */
+		protected function show ($data) {
+			echo '<pre>';
+			print_r($data);
+			echo '</pre>';
 		}
 	}

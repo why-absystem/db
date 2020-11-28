@@ -1,7 +1,7 @@
 {
     "name": "wahyu/db",
     "type": "library",
-	"description": "Database CRUD PHP MYSQL",
+    "description": "Database CRUD PHP MYSQL",
     "license": "MIT",
     "authors": [
         {
@@ -10,12 +10,13 @@
         }
     ],
     "minimum-stability": "dev",
-	"autoload": {
-		"psr-4": {
-			"W\\": "src/"
-		}
-	},
-	"require": {
-        "jdorn/sql-formatter": "1.2.17"
+    "autoload": {
+        "psr-4": {
+            "W\\": "src/"
+        }
+    },
+    "require": {
+        "jdorn/sql-formatter": "1.2.17",
+        "vlucas/phpdotenv": "4.*"
     }
 }
