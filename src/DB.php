@@ -26,7 +26,7 @@
 		 */
 		private $con        = FALSE; // Check to see if the connection is active
 		private $myconn     = ""; // This will be our mysqli object
-		private $result     = array(); // Any results from a query will be stored here
+		private $result     = []; // Any results from a query will be stored here
 		private $myQuery    = "";// used for debugging process with SQL return
 		private $numResults = "";// used for returning the number of rows
 		
@@ -78,6 +78,12 @@
 		public function disconnect () {
 			// If there is a connection to the database
 			if ($this->con) {
+				
+				/*RESET*/
+				$this->result     = [];
+				$this->myQuery    = "";
+				$this->numResults = "";
+				
 				// We have found a connection, try to close it
 				if ($this->myconn->close()) {
 					// We have successfully closed the connection, set the connection variable to false
@@ -96,6 +102,7 @@
 		 * @return bool
 		 */
 		public function sql ($sql) {
+			$this->disconnect();
 			$this->connect();
 			$query         = $this->myconn->query($sql);
 			$this->myQuery = $sql; // Pass back the SQL
@@ -136,6 +143,7 @@
 		 * Function to SELECT from the database
 		 */
 		public function select ($table, $rows = '*', $join = NULL, $where = NULL, $order = NULL, $limit = NULL) {
+			$this->disconnect();
 			$this->connect();
 			// Create query from the variables passed to the function
 			$q = 'SELECT ' . $rows . ' FROM ' . $table;
@@ -193,6 +201,7 @@
 		 * Function to insert into the database
 		 */
 		public function insert ($table, $params = array()) {
+			$this->disconnect();
 			$this->connect();
 			// Check to see if the table exists
 			if ($this->table_exists($table)) {
@@ -218,6 +227,7 @@
 		 * Function to delete table or row(s) from database
 		 */
 		public function delete ($table, $where = NULL) {
+			$this->disconnect();
 			$this->connect();
 			// Check to see if table exists
 			if ($this->table_exists($table)) {
@@ -250,6 +260,7 @@
 		 * Function to update row in database
 		 */
 		public function update ($table, $params = array(), $where) {
+			$this->disconnect();
 			$this->connect();
 			// Check to see if table exists
 			if ($this->table_exists($table)) {
